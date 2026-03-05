@@ -64,6 +64,7 @@ func (a *Account) SetIsFrozen(frozen bool) {
 
 // Withdraw removes money from the account.
 // The caller must deal with: frozen checks, amount validation, overdraft logic.
+/*
 func Withdraw(account *Account, amount float64) error {
 	if account.GetIsFrozen() {
 		return errors.New("account is frozen")
@@ -77,9 +78,27 @@ func Withdraw(account *Account, amount float64) error {
 	account.SetBalance(account.GetBalance() - amount)
 	return nil
 }
+*/
+
+func (account *Account) Withdraw(amount float64) error {
+	if account.frozen {
+		return errors.New("account is frozen")
+	}
+	if amount <= 0 {
+		return fmt.Errorf("invalid amount: %.2f", amount)
+	}
+	if account.balance-amount < account.overdraftLimit {
+		return errors.New("insufficient funds")
+	}
+
+	account.balance = account.balance - amount
+
+	return nil
+}
 
 // Deposit adds money to the account.
 // The caller must deal with: frozen checks, amount validation.
+/*
 func Deposit(account *Account, amount float64) error {
 	if account.GetIsFrozen() {
 		return errors.New("account is frozen")
@@ -90,10 +109,23 @@ func Deposit(account *Account, amount float64) error {
 	account.SetBalance(account.GetBalance() + amount)
 	return nil
 }
+*/
+
+func (account *Account) Deposit(amount float64) error {
+	if account.frozen {
+		return errors.New("account is frozen")
+	}
+	if amount <= 0 {
+		return fmt.Errorf("invalid amount: %.2f", amount)
+	}
+	account.balance = account.balance + amount
+	return nil
+}
 
 // Transfer moves money from one account to another.
 // The caller must deal with: frozen checks on both accounts, amount validation,
 // overdraft logic — reaching into the internals of two objects.
+/*
 func Transfer(from, to *Account, amount float64) error {
 	if from.GetIsFrozen() {
 		return errors.New("source account is frozen")
@@ -111,13 +143,43 @@ func Transfer(from, to *Account, amount float64) error {
 	to.SetBalance(to.GetBalance() + amount)
 	return nil
 }
+*/
+
+func (from *Account) Transfer(to *Account, amount float64) error {
+	if from.frozen {
+		return errors.New("source account is frozen")
+	}
+	if to.frozen {
+		return errors.New("destination account is frozen")
+	}
+	if amount <= 0 {
+		return fmt.Errorf("invalid amount: %.2f", amount)
+	}
+	if from.balance-amount < from.overdraftLimit {
+		return errors.New("insufficient funds")
+	}
+	from.balance = from.balance - amount
+	to.balance = to.balance + amount
+	return nil
+}
 
 // Freeze prevents any further operations on the account.
+
+/*
 func Freeze(account *Account) error {
 	if account.GetIsFrozen() {
 		return errors.New("account is already frozen")
 	}
 	account.SetIsFrozen(true)
+	return nil
+}
+*/
+
+func (account *Account) Freeze() error {
+	if account.frozen {
+		return errors.New("account is already frozen")
+	}
+
 	return nil
 }
 
