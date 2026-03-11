@@ -11,16 +11,16 @@ import (
 func TestNew(t *testing.T) {
 	acc := New("Alice", 100.0)
 
-	if acc.GetOwner() != "Alice" {
-		t.Errorf("expected owner Alice, got %s", acc.GetOwner())
+	if acc.owner != "Alice" {
+		t.Errorf("expected owner Alice, got %s", acc.owner)
 	}
-	if acc.GetBalance() != 0 {
-		t.Errorf("expected balance 0, got %.2f", acc.GetBalance())
+	if acc.balance != 0 {
+		t.Errorf("expected balance 0, got %.2f", acc.balance)
 	}
-	if acc.GetOverdraftLimit() != 100.0 {
-		t.Errorf("expected overdraft limit 100, got %.2f", acc.GetOverdraftLimit())
+	if acc.overdraftLimit != 100.0 {
+		t.Errorf("expected overdraft limit 100, got %.2f", acc.overdraftLimit)
 	}
-	if acc.GetIsFrozen() {
+	if acc.frozen {
 		t.Error("expected account to not be frozen")
 	}
 }
@@ -61,19 +61,19 @@ func TestDeposit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			acc := New("Alice", 0)
 			if tt.initial > 0 {
-				_ = Deposit(acc, tt.initial)
+				_ = acc.Deposit(tt.initial)
 			}
 			if tt.frozen {
-				_ = Freeze(acc)
+				_ = acc.Freeze()
 			}
 
-			err := Deposit(acc, tt.amount)
+			err := acc.Deposit(tt.amount)
 
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Deposit() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !tt.wantErr && acc.GetBalance() != tt.wantBalance {
-				t.Errorf("expected balance %.2f, got %.2f", tt.wantBalance, acc.GetBalance())
+			if !tt.wantErr && acc.balance != tt.wantBalance {
+				t.Errorf("expected balance %.2f, got %.2f", tt.wantBalance, acc.balance)
 			}
 		})
 	}
@@ -134,22 +134,22 @@ func TestWithdraw(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			acc := New("Alice", tt.overdraftLimit)
 			if tt.initial > 0 {
-				_ = Deposit(acc, tt.initial)
+				_ = acc.Deposit(tt.initial)
 			}
 			if tt.frozen {
-				_ = Freeze(acc)
+				_ = acc.Freeze()
 			}
 
-			err := Withdraw(acc, tt.amount)
+			err := acc.Withdraw(tt.amount)
 
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Withdraw() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !tt.wantErr && acc.GetBalance() != tt.wantBalance {
-				t.Errorf("expected balance %.2f, got %.2f", tt.wantBalance, acc.GetBalance())
+			if !tt.wantErr && acc.balance != tt.wantBalance {
+				t.Errorf("expected balance %.2f, got %.2f", tt.wantBalance, acc.balance)
 			}
-			if tt.wantErr && tt.initial > 0 && acc.GetBalance() != tt.wantBalance {
-				t.Errorf("balance should be unchanged, got %.2f", acc.GetBalance())
+			if tt.wantErr && tt.initial > 0 && acc.balance != tt.wantBalance {
+				t.Errorf("balance should be unchanged, got %.2f", acc.balance)
 			}
 		})
 	}
@@ -213,29 +213,29 @@ func TestTransfer(t *testing.T) {
 			from := New("Alice", 0)
 			to := New("Bob", 0)
 			if tt.fromBalance > 0 {
-				_ = Deposit(from, tt.fromBalance)
+				_ = from.Deposit(tt.fromBalance)
 			}
 			if tt.toBalance > 0 {
-				_ = Deposit(to, tt.toBalance)
+				_ = to.Deposit(tt.toBalance)
 			}
 			if tt.fromFrozen {
-				_ = Freeze(from)
+				_ = from.Freeze()
 			}
 			if tt.toFrozen {
-				_ = Freeze(to)
+				_ = to.Freeze()
 			}
 
-			err := Transfer(from, to, tt.amount)
+			err := from.Transfer(to, tt.amount)
 
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Transfer() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !tt.wantErr {
-				if from.GetBalance() != tt.wantFromBalance {
-					t.Errorf("expected sender balance %.2f, got %.2f", tt.wantFromBalance, from.GetBalance())
+				if from.balance != tt.wantFromBalance {
+					t.Errorf("expected sender balance %.2f, got %.2f", tt.wantFromBalance, from.balance)
 				}
-				if to.GetBalance() != tt.wantToBalance {
-					t.Errorf("expected receiver balance %.2f, got %.2f", tt.wantToBalance, to.GetBalance())
+				if to.balance != tt.wantToBalance {
+					t.Errorf("expected receiver balance %.2f, got %.2f", tt.wantToBalance, to.balance)
 				}
 			}
 		})
@@ -265,16 +265,16 @@ func TestFreeze(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			acc := New("Alice", 0)
 			if tt.frozen {
-				_ = Freeze(acc)
+				_ = acc.Freeze()
 			}
 
-			err := Freeze(acc)
+			err := acc.Freeze()
 
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Freeze() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if acc.GetIsFrozen() != tt.wantFrozen {
-				t.Errorf("expected frozen=%v, got %v", tt.wantFrozen, acc.GetIsFrozen())
+			if acc.frozen != tt.wantFrozen {
+				t.Errorf("expected frozen=%v, got %v", tt.wantFrozen, acc.frozen)
 			}
 		})
 	}
@@ -301,16 +301,16 @@ func TestUnfreeze(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			acc := New("Alice", 0)
 			if tt.frozen {
-				_ = Freeze(acc)
+				_ = acc.Freeze()
 			}
 
-			err := Unfreeze(acc)
+			err := acc.Unfreeze()
 
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("Unfreeze() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if acc.GetIsFrozen() != tt.wantFrozen {
-				t.Errorf("expected frozen=%v, got %v", tt.wantFrozen, acc.GetIsFrozen())
+			if acc.frozen != tt.wantFrozen {
+				t.Errorf("expected frozen=%v, got %v", tt.wantFrozen, acc.frozen)
 			}
 		})
 	}
